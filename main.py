@@ -1,4 +1,3 @@
-import random
 import time
 from numba import jit, int8, int64, prange
 import numpy as np
@@ -53,7 +52,7 @@ def main():
             break
 
 
-@jit('int64(int8, int8, int8, int8, int64)', nopython=True)
+@jit(int64(int8, int8, int8, int8, int64), nopython=True)
 def calculate_results(door1, door2, door3, switch, number):
     success = 0
     random_numbers = np.random.randint(0, high=3, size=number)
