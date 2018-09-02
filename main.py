@@ -1,5 +1,5 @@
 import time
-from numba import jit, int8, int64, prange
+from numba import jit, int8, int64, int32, prange
 import numpy as np
 
 """
@@ -59,38 +59,35 @@ def main():
             break
 
 
-@jit(int64(int8, int64), nopython=True)
 def calculate_results(switch, number):
     success = 0
-    doors = np.array([1, 1, 0])
     if number > 1000000:
-        iterations = number/1000000
+        iterations = int(number/1000000)
         leftover = number % 1000000
-        for x in prange(iterations):
-            random_numbers = np.random.randint(0, high=3, size=1000000)
-            for y in prange(1000000):
-                np.random.shuffle(doors)
-                choice = doors[random_numbers[y]]
-                if switch == 0 and choice == 0:
-                    success += 1
-                if switch == 1 and choice == 1:
-                    success += 1
-        random_numbers = np.random.randint(0, high=3, size=leftover)
-        for y in prange(leftover):
-            np.random.shuffle(doors)
-            choice = doors[random_numbers[y]]
-            if switch == 0 and choice == 0:
-                success += 1
-            if switch == 1 and choice == 1:
-                success += 1
+        for x in range(iterations):
+            success += results(switch, 1000000)
+        success += results(switch, leftover)
     else:
-        random_numbers = np.random.randint(0, high=3, size=number)
+        success += results(switch, number)
+    return success
+
+
+@jit(int32(int8, int32), nopython=True)
+def results(switch, number):
+    success = 0
+    doors = np.array([1, 1, 0])
+    random_numbers = np.random.randint(0, high=3, size=number)
+    if switch == 0:
         for x in prange(number):
             np.random.shuffle(doors)
             choice = doors[random_numbers[x]]
-            if switch == 0 and choice == 0:
+            if choice == 0:
                 success += 1
-            if switch == 1 and choice == 1:
+    else:
+        for x in prange(number):
+            np.random.shuffle(doors)
+            choice = doors[random_numbers[x]]
+            if choice == 1:
                 success += 1
     return success
 
