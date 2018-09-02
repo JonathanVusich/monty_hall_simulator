@@ -25,6 +25,12 @@ def main():
         while True:
             try:
                 number = int(input("How many times should the simulation be run? (max = 100,000,000)"))
+                if number > 100000000:
+                    print("Number is too large! Please enter a smaller value!")
+                    continue
+                elif number < 1:
+                    print("Number is too small! Please enter a larger value!")
+                    continue
                 break
             except ValueError:
                 print("Please enter an integer value!")
