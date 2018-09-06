@@ -1,5 +1,5 @@
 import time
-from numba import jit, int8, int64, int32, prange
+from numba import jit, int8, int64, int32, prange, vectorize
 import numpy as np
 
 """
@@ -28,7 +28,7 @@ def main():
                 break
             except ValueError:
                 print("Please enter an integer value!")
-        if number > 1000000:
+        if number > 100000000:
             start = time.perf_counter()
             success = calculate_results(switch, 1000000)
             benchmark = time.perf_counter() - start
@@ -61,34 +61,47 @@ def main():
 
 def calculate_results(switch, number):
     success = 0
-    if number > 1000000:
-        iterations = int(number/1000000)
-        leftover = number % 1000000
+    if number > 10000000:
+        iterations = int(number/10000000)
+        leftover = number % 10000000
         for x in range(iterations):
-            success += results(switch, 1000000)
-        success += results(switch, leftover)
+            if switch == 1:
+                success += switch_results(10000000)
+            else:
+                success += noswitch_results(10000000)
+        if switch == 1:
+            success += switch_results(leftover)
+        else:
+            success += noswitch_results(leftover)
     else:
-        success += results(switch, number)
+        if switch == 1:
+            success += switch_results(number)
+        else:
+            success += noswitch_results(number)
     return success
 
 
-@jit(int32(int8, int32), nopython=True)
-def results(switch, number):
+@jit(int64(int64), nopython=True, parallel=True)
+def switch_results(number):
     success = 0
-    doors = np.array([1, 1, 0])
-    random_numbers = np.random.randint(0, high=3, size=number)
-    if switch == 0:
-        for x in prange(number):
-            np.random.shuffle(doors)
-            choice = doors[random_numbers[x]]
-            if choice == 0:
-                success += 1
-    else:
-        for x in prange(number):
-            np.random.shuffle(doors)
-            choice = doors[random_numbers[x]]
-            if choice == 1:
-                success += 1
+    doors = np.reshape(np.array([1, 1, 0, 1, 0, 1, 0, 1, 1]), (3, 3))
+    door_set = np.random.randint(0, high=3, size=number)
+    door_choices = np.random.randint(0, high=3, size=number)
+    for x in prange(number):
+        if doors[door_set[x], door_choices[x]] == 1:
+            success += 1
+    return success
+
+
+@jit(int64(int64), nopython=True, parallel=True)
+def noswitch_results(number):
+    success = 0
+    doors = np.reshape(np.array([1, 1, 0, 1, 0, 1, 0, 1, 1]), (3, 3))
+    door_set = np.random.randint(0, high=3, size=number)
+    door_choices = np.random.randint(0, high=3, size=number)
+    for x in prange(number):
+        if doors[door_set[x], door_choices[x]] == 0:
+            success += 1
     return success
 
 
